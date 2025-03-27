@@ -26,10 +26,11 @@ class ChatService {
 
   Future<void> addMessage(ChatMessageModel message) async {
     if (!Hive.isBoxOpen('chat_messages')) {
-      await _initializeBox();  // Ensure box is initialized
+      await _initializeBox(); // Ensure box is initialized
     }
 
-    _chatBox = Hive.box<ChatMessageModel>('chat_messages'); // Re-assign _chatBox if needed
+    _chatBox = Hive.box<ChatMessageModel>(
+        'chat_messages'); // Re-assign _chatBox if needed
     await _chatBox.add(message);
   }
 

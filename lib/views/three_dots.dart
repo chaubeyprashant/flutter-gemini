@@ -9,7 +9,7 @@ class ThreeDotLoader extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: List.generate(
         3,
-            (index) => AnimatedDot(index: index),
+        (index) => AnimatedDot(index: index),
       ),
     );
   }

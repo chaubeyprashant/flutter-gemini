@@ -13,5 +13,6 @@ class ChatMessageModel extends HiveObject {
   @HiveField(2)
   final DateTime timestamp;
 
-  ChatMessageModel({required this.message, required this.sender, required this.timestamp});
+  ChatMessageModel(
+      {required this.message, required this.sender, required this.timestamp});
 }

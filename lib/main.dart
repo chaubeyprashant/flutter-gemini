@@ -22,14 +22,15 @@ void main() async {
     MultiBlocProvider(
       providers: [
         BlocProvider(
-          create: (context) => ChatBloc(ChatRepository(ChatService()))..add(LoadMessagesEvent()),
+          create: (context) =>
+              ChatBloc(ChatRepository(ChatService()))..add(LoadMessagesEvent()),
         ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Virtual Agent Chat',
         theme: ThemeData(primarySwatch: Colors.green),
-        home: ChatScreen(),
+        home: HomeScreen(),
       ),
     ),
   );
@@ -44,20 +45,37 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text('Welcome to Virtual Agent Chat',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(
+              'Welcome to Virtual Agent Chat',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
             SizedBox(height: 20),
             ElevatedButton.icon(
-              onPressed: () {
+              onPressed: () async {
+                // Clear chat history
+                var box = Hive.box<ChatMessageModel>('chat_messages');
+                await box.clear();
+
+                // Reload messages (empty state)
+                context.read<ChatBloc>().add(LoadMessagesEvent());
+
+                // Navigate to chat screen
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => ChatScreen()),
                 );
               },
-              icon: Icon(Icons.chat, color: Colors.white),
-              label: Text("Start Chat"),
+              icon: Icon(Icons.delete, color: Colors.white),
+              label: Text(
+                "Clear Chat & Start New",
+                style: Theme.of(context)
+                    .textTheme
+                    .bodyMedium
+                    ?.copyWith(color: Colors.white),
+              ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
+                backgroundColor: Colors.red,
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
@@ -66,6 +84,17 @@ class HomeScreen extends StatelessWidget {
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => ChatScreen()),
+          );
+        },
+        label: Text("Start Chat"),
+        icon: Icon(Icons.chat),
+        backgroundColor: Colors.green,
       ),
     );
   }

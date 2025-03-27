@@ -17,12 +17,14 @@ class ChatRepository {
   }
 
   Future<ChatMessageModel> sendMessage(String userMessage) async {
-    final userChat = ChatMessageModel(message: userMessage, sender: "user", timestamp: DateTime.now());
+    final userChat = ChatMessageModel(
+        message: userMessage, sender: "user", timestamp: DateTime.now());
     await _chatService.addMessage(userChat);
 
     // Fetch response from API
     final botResponse = await _fetchBotResponse(userMessage);
-    final botChat = ChatMessageModel(message: botResponse, sender: "bot", timestamp: DateTime.now());
+    final botChat = ChatMessageModel(
+        message: botResponse, sender: "bot", timestamp: DateTime.now());
 
     await _chatService.addMessage(botChat);
     return botChat;
@@ -34,8 +36,7 @@ class ChatRepository {
     }
 
     final url = Uri.parse(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=$_apiKey"
-    );
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=$_apiKey");
 
     final response = await http.post(
       url,
@@ -53,7 +54,9 @@ class ChatRepository {
 
     if (response.statusCode == 200) {
       final jsonResponse = jsonDecode(response.body);
-      return jsonResponse["candidates"]?[0]?["content"]?["parts"]?[0]?["text"] ?? "No response";
+      return jsonResponse["candidates"]?[0]?["content"]?["parts"]?[0]
+              ?["text"] ??
+          "No response";
     } else {
       return "Error: ${response.statusCode} - ${response.reasonPhrase}";
     }

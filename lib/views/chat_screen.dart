@@ -15,16 +15,22 @@ class ChatScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Chat"), backgroundColor: Colors.green[700]),
-      body: BlocBuilder<ChatBloc, ChatState>(
+      appBar: AppBar(
+        title: const Text("Chat"),
+        backgroundColor: Colors.green[700],
+      ),
+      body: BlocConsumer<ChatBloc, ChatState>(
+        listener: (context, state) {
+          // You can perform side effects here if needed.
+        },
         builder: (context, state) {
           List<ChatMessageModel> messages = [];
           bool isTyping = false;
 
-          if (state is ChatLoadedState) {
-            messages = state.messages;
-          } else if (state is ChatLoadingState) {
+          if (state is ChatLoadingState) {
             isTyping = true;
+          } else if (state is ChatLoadedState) {
+            messages = state.messages;
           }
 
           return SafeArea(
@@ -33,17 +39,18 @@ class ChatScreen extends StatelessWidget {
                 Expanded(
                   child: ListView.builder(
                     reverse: true,
-                    padding: EdgeInsets.all(16),
-                    itemCount: messages.length,
-                    itemBuilder: (context, index) =>
-                        _buildChatBubble(messages[index]),
+                    padding: const EdgeInsets.all(12),
+                    itemCount: messages.length + (isTyping ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (isTyping && index == 0) {
+                        return _buildTypingBubble();
+                      }
+                      return _buildChatBubble(
+                          messages[index - (isTyping ? 1 : 0)]);
+                    },
                   ),
                 ),
-                if (isTyping) ThreeDotLoader(),
-                Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16),
-                  child: _buildTextComposer(context),
-                )
+                _buildTextComposer(context),
               ],
             ),
           );
@@ -53,10 +60,37 @@ class ChatScreen extends StatelessWidget {
   }
 
   Widget _buildTextComposer(BuildContext context) {
-    return TextField(
-      controller: _controller,
-      onSubmitted: (_) => _sendMessage(context),
-      decoration: InputDecoration(hintText: "Type a message..."),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              onSubmitted: (_) => _sendMessage(context),
+              decoration: InputDecoration(
+                hintText: "Type a message...",
+                filled: true,
+                fillColor: Colors.grey[200],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () => _sendMessage(context),
+            child: CircleAvatar(
+              backgroundColor: Colors.green[700],
+              child: const Icon(Icons.send, color: Colors.white),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -68,6 +102,53 @@ class ChatScreen extends StatelessWidget {
   }
 
   Widget _buildChatBubble(ChatMessageModel message) {
-    return Text("${message.sender}: ${message.message}");
+    bool isUserMessage = message.sender == "user";
+
+    return Align(
+      alignment: isUserMessage ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+        decoration: BoxDecoration(
+          color: isUserMessage ? Colors.green[600] : Colors.grey[300],
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(12),
+            topRight: const Radius.circular(12),
+            bottomLeft: isUserMessage
+                ? const Radius.circular(12)
+                : const Radius.circular(0),
+            bottomRight: isUserMessage
+                ? const Radius.circular(0)
+                : const Radius.circular(12),
+          ),
+        ),
+        child: Text(
+          message.message,
+          style: TextStyle(
+            color: isUserMessage ? Colors.white : Colors.black87,
+            fontSize: 16,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTypingBubble() {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.grey[300],
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(12),
+            topRight: Radius.circular(12),
+            bottomRight: Radius.circular(12),
+          ),
+        ),
+        child: const ThreeDotLoader(), // Shows animated dots
+      ),
+    );
   }
 }

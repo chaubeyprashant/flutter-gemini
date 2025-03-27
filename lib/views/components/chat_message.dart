@@ -39,15 +39,15 @@ class ChatMessage extends StatelessWidget {
           children: [
             isImage
                 ? AspectRatio(
-              aspectRatio: 16 / 9,
-              child: Image.network(
-                text,
-                loadingBuilder: (context, child, loadingProgress) =>
-                loadingProgress == null
-                    ? child
-                    : Center(child: CircularProgressIndicator()),
-              ),
-            )
+                    aspectRatio: 16 / 9,
+                    child: Image.network(
+                      text,
+                      loadingBuilder: (context, child, loadingProgress) =>
+                          loadingProgress == null
+                              ? child
+                              : Center(child: CircularProgressIndicator()),
+                    ),
+                  )
                 : text.trim().text.bodyMedium(context).make(),
             SizedBox(height: 5),
             Align(

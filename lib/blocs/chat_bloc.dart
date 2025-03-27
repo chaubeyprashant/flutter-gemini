@@ -22,7 +22,8 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   void _onSendMessage(SendMessageEvent event, Emitter<ChatState> emit) async {
     final currentState = state;
     if (currentState is ChatLoadedState) {
-      final List<ChatMessageModel> updatedMessages = List.from(currentState.messages);
+      final List<ChatMessageModel> updatedMessages =
+          List.from(currentState.messages);
 
       // Add user message
       final userMessage = ChatMessageModel(
