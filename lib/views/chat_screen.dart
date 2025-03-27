@@ -1,133 +1,154 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:spring_ai_agent/views/three_dots.dart';
-import 'package:velocity_x/velocity_x.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../blocs/chat_bloc.dart';
+import '../blocs/chat_event.dart';
+import '../blocs/chat_state.dart';
+import '../model/chat_message_model.dart';
+import 'components/chat_message.dart';
+import 'three_dots.dart';
 
-import '../model/chat_message.dart';
-
-class ChatScreen extends StatefulWidget {
-  const ChatScreen({super.key});
-
-  @override
-  State<ChatScreen> createState() => _ChatScreenState();
-}
-
-class _ChatScreenState extends State<ChatScreen> {
+class ChatScreen extends StatelessWidget {
   final TextEditingController _controller = TextEditingController();
-  final List<ChatMessage> _messages = [];
-  bool _isTyping = false;
 
-  final String _apiKey = "AIzaSyB5RyH2i6uxfggqc2dxgJbK9T3GpZMPjk8"; // Replace with your key
-
-  void _sendMessage() async {
-    if (_controller.text.isEmpty) return;
-
-    String userMessage = _controller.text;
-    ChatMessage message = ChatMessage(
-      text: userMessage,
-      sender: "user",
-      isImage: false,
-    );
-
-    setState(() {
-      _messages.insert(0, message);
-      _isTyping = true;
-    });
-
-    _controller.clear();
-
-    String botResponse = await _fetchGeminiResponse(userMessage);
-
-    insertNewData(botResponse);
-  }
-
-  Future<String> _fetchGeminiResponse(String prompt) async {
-    final url = Uri.parse(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=$_apiKey"
-    );
-
-    final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "contents": [
-          {
-            "parts": [
-              {"text": prompt}
-            ]
-          }
-        ]
-      }),
-    );
-
-    if (response.statusCode == 200) {
-      final jsonResponse = jsonDecode(response.body);
-      return jsonResponse["candidates"]?[0]?["content"]?["parts"]?[0]?["text"] ?? "No response";
-    } else {
-      return "Error: ${response.statusCode} - ${response.reasonPhrase}";
-    }
-  }
-
-  void insertNewData(String response) {
-    ChatMessage botMessage = ChatMessage(
-      text: response,
-      sender: "bot",
-      isImage: false,
-    );
-
-    setState(() {
-      _isTyping = false;
-      _messages.insert(0, botMessage);
-    });
-  }
-
-  Widget _buildTextComposer() {
-    return Row(
-      children: [
-        Expanded(
-          child: TextField(
-            controller: _controller,
-            onSubmitted: (value) => _sendMessage(),
-            decoration: const InputDecoration.collapsed(
-                hintText: "Question/description"),
-          ),
-        ),
-        IconButton(
-          icon: const Icon(Icons.send),
-          onPressed: _sendMessage,
-        ),
-      ],
-    ).px16();
-  }
+  ChatScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(title: const Text("Gemini AI Chat Demo")),
-        body: SafeArea(
-          child: Column(
-            children: [
-              Flexible(
+      appBar: AppBar(
+        title: const Text("Chat"),
+        backgroundColor: Colors.green[700],
+      ),
+      body: BlocConsumer<ChatBloc, ChatState>(
+        listener: (context, state) {
+          // You can perform side effects here if needed.
+        },
+        builder: (context, state) {
+          List<ChatMessageModel> messages = [];
+          bool isTyping = false;
+
+          if (state is ChatLoadingState) {
+            isTyping = true;
+          } else if (state is ChatLoadedState) {
+            messages = state.messages;
+          }
+
+          return SafeArea(
+            child: Column(
+              children: [
+                Expanded(
                   child: ListView.builder(
                     reverse: true,
-                    padding: Vx.m8,
-                    itemCount: _messages.length,
+                    padding: const EdgeInsets.all(12),
+                    itemCount: messages.length + (isTyping ? 1 : 0),
                     itemBuilder: (context, index) {
-                      print(_messages[index].text);
-                      return _messages[index];
+                      if (isTyping && index == 0) {
+                        return _buildTypingBubble();
+                      }
+                      return _buildChatBubble(
+                          messages[index - (isTyping ? 1 : 0)]);
                     },
-                  )),
-              if (_isTyping) const ThreeDots(),
-              const Divider(height: 1.0),
-              Container(
-                decoration: BoxDecoration(
-                  color: context.cardColor,
+                  ),
                 ),
-                child: _buildTextComposer(),
-              )
-            ],
+                _buildTextComposer(context),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildTextComposer(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              onSubmitted: (_) => _sendMessage(context),
+              decoration: InputDecoration(
+                hintText: "Type a message...",
+                filled: true,
+                fillColor: Colors.grey[200],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(30),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              ),
+            ),
           ),
-        ));
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () => _sendMessage(context),
+            child: CircleAvatar(
+              backgroundColor: Colors.green[700],
+              child: const Icon(Icons.send, color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _sendMessage(BuildContext context) {
+    if (_controller.text.isNotEmpty) {
+      context.read<ChatBloc>().add(SendMessageEvent(_controller.text));
+      _controller.clear();
+    }
+  }
+
+  Widget _buildChatBubble(ChatMessageModel message) {
+    bool isUserMessage = message.sender == "user";
+
+    return Align(
+      alignment: isUserMessage ? Alignment.centerRight : Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+        decoration: BoxDecoration(
+          color: isUserMessage ? Colors.green[600] : Colors.grey[300],
+          borderRadius: BorderRadius.only(
+            topLeft: const Radius.circular(12),
+            topRight: const Radius.circular(12),
+            bottomLeft: isUserMessage
+                ? const Radius.circular(12)
+                : const Radius.circular(0),
+            bottomRight: isUserMessage
+                ? const Radius.circular(0)
+                : const Radius.circular(12),
+          ),
+        ),
+        child: Text(
+          message.message,
+          style: TextStyle(
+            color: isUserMessage ? Colors.white : Colors.black87,
+            fontSize: 16,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTypingBubble() {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: Colors.grey[300],
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(12),
+            topRight: Radius.circular(12),
+            bottomRight: Radius.circular(12),
+          ),
+        ),
+        child: const ThreeDotLoader(), // Shows animated dots
+      ),
+    );
   }
 }
