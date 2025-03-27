@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/adapters.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:spring_ai_agent/service/chat_service.dart';
 import 'package:spring_ai_agent/views/components/chat_message.dart';
 import 'blocs/chat_bloc.dart';
@@ -16,11 +15,7 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
   await Hive.initFlutter();
-
-  // Register the adapter
-  Hive.registerAdapter(ChatMessageModelAdapter());
-
-  // Open the chat_messages box
+  Hive.registerAdapter(ChatMessageModelAdapter()); // Ensure this is added
   await Hive.openBox<ChatMessageModel>('chat_messages');
 
   runApp(

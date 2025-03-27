@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../model/chat_message_model.dart';
 import '../repositories/chat_repository.dart';
 import '../views/components/chat_message.dart';
 import 'chat_event.dart';
@@ -21,11 +22,11 @@ class ChatBloc extends Bloc<ChatEvent, ChatState> {
   void _onSendMessage(SendMessageEvent event, Emitter<ChatState> emit) async {
     final currentState = state;
     if (currentState is ChatLoadedState) {
-      final List<ChatMessage> updatedMessages = List.from(currentState.messages);
+      final List<ChatMessageModel> updatedMessages = List.from(currentState.messages);
 
       // Add user message
-      final userMessage = ChatMessage(
-        text: event.message,
+      final userMessage = ChatMessageModel(
+        message: event.message,
         sender: "user",
         timestamp: DateTime.now(),
       );

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/chat_bloc.dart';
 import '../blocs/chat_event.dart';
 import '../blocs/chat_state.dart';
+import '../model/chat_message_model.dart';
 import 'components/chat_message.dart';
 import 'three_dots.dart';
 
@@ -17,7 +18,7 @@ class ChatScreen extends StatelessWidget {
       appBar: AppBar(title: Text("Chat"), backgroundColor: Colors.green[700]),
       body: BlocBuilder<ChatBloc, ChatState>(
         builder: (context, state) {
-          List<ChatMessage> messages = [];
+          List<ChatMessageModel> messages = [];
           bool isTyping = false;
 
           if (state is ChatLoadedState) {
@@ -66,7 +67,7 @@ class ChatScreen extends StatelessWidget {
     }
   }
 
-  Widget _buildChatBubble(ChatMessage message) {
-    return Text("${message.sender}: ${message.text}");
+  Widget _buildChatBubble(ChatMessageModel message) {
+    return Text("${message.sender}: ${message.message}");
   }
 }

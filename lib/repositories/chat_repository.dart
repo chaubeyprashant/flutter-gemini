@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:spring_ai_agent/model/chat_message_model.dart';
 
 import '../service/chat_service.dart';
 import '../views/components/chat_message.dart';
@@ -11,17 +12,17 @@ class ChatRepository {
 
   ChatRepository(this._chatService);
 
-  Future<List<ChatMessage>> getLocalMessages() async {
+  Future<List<ChatMessageModel>> getLocalMessages() async {
     return _chatService.getMessages();
   }
 
-  Future<ChatMessage> sendMessage(String userMessage) async {
-    final userChat = ChatMessage(text: userMessage, sender: "user", timestamp: DateTime.now());
+  Future<ChatMessageModel> sendMessage(String userMessage) async {
+    final userChat = ChatMessageModel(message: userMessage, sender: "user", timestamp: DateTime.now());
     await _chatService.addMessage(userChat);
 
     // Fetch response from API
     final botResponse = await _fetchBotResponse(userMessage);
-    final botChat = ChatMessage(text: botResponse, sender: "bot", timestamp: DateTime.now());
+    final botChat = ChatMessageModel(message: botResponse, sender: "bot", timestamp: DateTime.now());
 
     await _chatService.addMessage(botChat);
     return botChat;
